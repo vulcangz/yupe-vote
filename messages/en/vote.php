@@ -1,0 +1,22 @@
+<?php
+return array(
+    'Model ID' => '模型',
+    'User' => '用户',
+    'Status' => '状态',
+	'Add Datetime' => '加入时间',
+   	'Edit Datetime' => '更新时间',
+    'Name' => '名字',
+    'Title' => '标题',
+    'Short Description' => '简介',
+    'Add to favorites' => '加入收藏',
+    'Remove from favorites' => '从收藏夹中删除',
+    'You have already voted!' => '您已经投票了！',
+    'Your vote is accepted. Thanks!' => '您的投票被接受。谢谢!',
+    'This entity is not supported.' => '不支持此实体。',
+    'Guests are not allowed for this voting.' => '访客不允许参加此投票。',
+    'Target model not found.' => '没有找到目标模型。',
+    'Only voting is allowed for guests.' => '只允许客人投票。',
+	'Your vote has been canceled.' => '您的投票已取消。',
+    'Your vote has been changed. Thanks!' => '您的投票已修改。谢谢!',
+    'Guests are restricted to vote once every {guestTimeLimit} seconds' => '访客限制每{guestTimeLimit}秒投票一次',
+);
