@@ -2,7 +2,7 @@
 
 This module allows you to attach vote widgets, like/favorite buttons to your models (ported from [hauntd/yii2-vote](https://github.com/hauntd/yii2-vote)).
 
-![Demo](https://raw.githubusercontent.com/vulcangz/resources/master/yupe-vote/screenshot.gif)
+![Demo](https://github.com/vulcangz/yupe-vote/raw/master/docs/screenshot.gif)
 
 - Attach as many widgets to model as you need
 - Useful widgets included (Favorite button, Like button, Rating "up/down")
@@ -18,6 +18,7 @@ This module allows you to attach vote widgets, like/favorite buttons to your mod
 ### Step 2: Configuring your application
 
 1. configure your module
+
 Edit your module settings (template file: vote/install/vote.php), then copy it to protected/config/modules/
 
 Entity names should be in camelCase like `itemVote`, `itemVoteGuests`, `itemLike` and `itemFavorite`.
@@ -69,7 +70,9 @@ return [
 ```
 
 2. Add behavior to you model
+
 e.g. protected/modules/blog/models/Post.php
+
 ```php
 public function behaviors()
 {
@@ -86,6 +89,7 @@ public function behaviors()
 ```
 
 3. Add vote widget to your views
+
 e.g. Add all three widgets to view of blog/post/view (themes/default/views/blog/post/view.php)
 
 ```
@@ -115,6 +119,7 @@ e.g. Add all three widgets to view of blog/post/view (themes/default/views/blog/
 ```
 
 ### Step 3: Updating database schema
+
 After you downloaded and configured yupe-vote, the last thing you need to do is updating your database schema by applying the migrations:
 
 1. Method 1: through Control panel of "Yupe!" 
