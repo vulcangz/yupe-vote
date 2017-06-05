@@ -2,7 +2,7 @@
 
 这个模块允许为你的模型附加投票、喜欢或者收藏按钮的小工具。(移植自 [hauntd/yii2-vote](https://github.com/hauntd/yii2-vote)).
 
-![Demo](https://raw.githubusercontent.com/vulcangz/resources/master/yupe-vote/screenshot.gif)
+![Demo](https://github.com/vulcangz/yupe-vote/raw/master/docs/screenshot.gif)
 
 - 将尽可能多的小工具附加到模型中；
 - 有用的小工具包括（收藏按钮，喜欢按钮，投票“向上/向下”）
