@@ -96,6 +96,7 @@ public function behaviors()
 		'vote' => [
 			'class' => 'application.modules.vote.components.behaviors.VoteBehavior',
 			'entity' => 'postVote',	 // 必须与上一步中设置的实体名字相同
+			'cacheID' => 'cache',    // redis 缓存组件ID
 		],
 	];
 }
@@ -181,6 +182,7 @@ Like/Favorite widgets:
 
 ## 已知问题
 ~~1. 在Android 4.1.2下各按钮点击无反应. 原因未明。推测可能是该浏览器不兼容 HTML5的自定义 Data属性(data-*).~~
+
 在调整js代码调用顺序之后，问题暂时解决了。
 
 ## License
