@@ -14,7 +14,7 @@ class VoteModule extends yupe\components\WebModule
 	/**
      *
      */
-    const VERSION = '0.1';
+    const VERSION = '0.11';
 	
     const TYPE_VOTING = 'voting';
     const TYPE_TOGGLE = 'toggle';
