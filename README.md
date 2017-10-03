@@ -19,7 +19,7 @@ This module allows you to attach vote widgets, like/favorite buttons to your mod
 
 1. configure your module
 
-Edit your module settings (template file: vote/install/vote.php), then copy it to protected/config/modules/
+1.1 Edit your module settings (template file: vote/install/vote.php), then copy it to protected/config/modules/
 
 Entity names should be in camelCase like `itemVote`, `itemVoteGuests`, `itemLike` and `itemFavorite`.
 
@@ -69,6 +69,21 @@ return [
 ];
 ```
 
+1.2 Setup redis cache component for voteAttribute. If you already have redis cache component available, skip this step.
+```php
+'components' => [
+	//...
+	'cache' => [
+		'class'=>'CRedisCache',
+		'hostname'=>'127.0.0.1',
+		'port'=>6379,
+		'password'=> 'foobared',	//changed to your password
+		'database'=>6,	//changed to your db
+		'options'=>STREAM_CLIENT_CONNECT,
+	],
+	//...
+```
+
 2. Add behavior to you model
 
 e.g. protected/modules/blog/models/Post.php
@@ -83,6 +98,7 @@ public function behaviors()
 		'vote' => [
 			'class' => 'application.modules.vote.components.behaviors.VoteBehavior',
 			'entity' => 'postVote',	// must be the same as you set in the previous step 1
+			'cacheID' => 'cache'	// redis cache component ID you setup in "/protected/config/main.php"
 		],
 	];
 }
@@ -168,8 +184,9 @@ Like/Favorite widgets:
 Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
 
 ## Known issues
-1. Click "no response" under the default browser of Android 4.1.2. 
-Probably because it is not compatible with HTML5 Custom Data Attributes (data-*).
+~~1. Click "no response" under the default browser of Android 4.1.2. 
+Probably because it is not compatible with HTML5 Custom Data Attributes (data-*).~~
+After adjusting the code call order of the js code, the problem is solved.
 
 ## License
 
