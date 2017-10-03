@@ -2,7 +2,7 @@
 
 这个模块允许为你的模型附加投票、喜欢或者收藏按钮的小工具。(移植自 [hauntd/yii2-vote](https://github.com/hauntd/yii2-vote)).
 
-![Demo](https://github.com/vulcangz/yupe-vote/raw/master/docs/screenshot.gif)
+![Demo](https://raw.githubusercontent.com/vulcangz/resources/master/yupe-vote/screenshot.gif)
 
 - 将尽可能多的小工具附加到模型中；
 - 有用的小工具包括（收藏按钮，喜欢按钮，投票“向上/向下”）
@@ -67,6 +67,21 @@ return [
     ...
   ]
 ];
+```
+
+2.1.1 为vote模块配置redis 缓存。如你已有可用的redis缓存组件，可跳过这一步.
+```php
+'components' => [
+	//...
+	'cache' => [
+		'class'=>'CRedisCache',
+		'hostname'=>'127.0.0.1',
+		'port'=>6379,
+		'password'=> 'foobared',	//改为你的密码
+		'database'=>6,	//改为你的db
+		'options'=>STREAM_CLIENT_CONNECT,
+	],
+	//...
 ```
 
 2.2 为你的模型添加‘behavior’（行为）
@@ -165,7 +180,8 @@ Like/Favorite widgets:
 详情请参阅 [CHANGELOG](CHANGELOG.md)（暂无）.
 
 ## 已知问题
-1. 在Android 4.1.2下各按钮点击无反应. 原因未明。推测可能是该浏览器不兼容 HTML5的自定义 Data属性(data-*).
+~~1. 在Android 4.1.2下各按钮点击无反应. 原因未明。推测可能是该浏览器不兼容 HTML5的自定义 Data属性(data-*).~~
+在调整js代码调用顺序之后，问题暂时解决了。
 
 ## License
 
