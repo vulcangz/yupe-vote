@@ -10,12 +10,22 @@
  */
 class VoteBehavior extends CActiveRecordBehavior
 {
+    /**
+	 * @var string vote model entity.
+	 */
 	public $entity;
+    /**
+	 * @var string vote table name.
+	 */
+	public $voteTable = 'vote';
+	/**
+	 * @var string vote aggregate table name.
+	 */
+	public $voteAggregateTable = 'vote_aggregate';
     /**
      * @var array
      */
-    protected $voteAttributes;
-	
+    protected $voteAttributes;	
 	/**
      * @var bool
      */
@@ -25,26 +35,39 @@ class VoteBehavior extends CActiveRecordBehavior
      *
      * @var bool
      */
-    protected $voteAttributesAreLoaded = false;
-	
+    protected $voteAttributesAreLoaded = false;    
     /**
-     * @access public
-     * @var boolean loaded attributes after find model.
-     * @default TRUE
-     */
-    public $preload = TRUE;
-	
-	private $_primaryKey;
-    private $_tableSchema;
-    private $_tableName;
+	 * @var string|boolean caching component Id. If false don't use cache.
+	 * Defaults to false.
+	 */
+	public $cacheID = false;
+    /**
+	 * @var CCache
+	 */
+	protected $cache;
+    /**
+	 * @var integer $expire the number of seconds in which the cached value will expire. 0 means never expire.     
+	 * Defaults to 15(min) = 15*60*60(sec).
+	 */
+    protected $cacheExpire = 54000;
 
     /**
-     * @param \CComponent $owner
-     */
+	 * @throws CException
+	 * @param CComponent $owner
+	 * @return void
+	 */
     public function attach($owner)
     {
-        parent::attach($owner);
-    }
+		// Prepare cache component
+		if($this->cacheID!==false)
+			$this->cache = Yii::app()->getComponent($this->cacheID);
+		if(!($this->cache instanceof ICache)){
+			// If not set cache component, use dummy cache.
+			$this->cache = new CDummyCache;
+		}
+
+		parent::attach($owner);
+	}
 	
 	/**
      * @param CEvent
@@ -158,8 +181,9 @@ class VoteBehavior extends CActiveRecordBehavior
      */
     protected function getVoteAttributes()
 	{
-		$voteTable = '{{vote}}';
-		$voteAggregateTable = '{{vote_aggregate}}';
+        $owner = $this->getOwner();
+        $voteTable = '{{'.$this->voteTable.'}}';
+		$voteAggregateTable = '{{'.$this->voteAggregateTable.'}}';
 		
 		$module = Yii::app()->getModule('vote');		
         $settings = $module->getSettingsForEntity($this->entity);
@@ -176,91 +200,95 @@ class VoteBehavior extends CActiveRecordBehavior
 		$_join1 = null;
 		$_join2 = null;
 		$_join2and = null;
+        $_join2param = null;
 
-		foreach ($entities as $entity) {
-			$entityEncoded[$entity] = $module->encodeEntity($entity);
-			$_select1 .=  ", `{$entity}Aggregate`.`positive` as `{$entity}Positive`, `{$entity}Aggregate`.`negative` as `{$entity}Negative`, `{$entity}Aggregate`.`rating` as `{$entity}Rating`";
-			$_select2 .= ", `{$entity}`.`value` as `{$entity}UserValue`";
+        foreach ($entities as $entity) {
+            $entityEncoded[$entity] = $module->encodeEntity($entity);
+            $_select1 .=  ", `{$entity}Aggregate`.`positive` as `{$entity}Positive`, `{$entity}Aggregate`.`negative` as `{$entity}Negative`, `{$entity}Aggregate`.`rating` as `{$entity}Rating`";
+            $_select2 .= ", `{$entity}`.`value` as `{$entity}UserValue`";
 
-			$_join1 .= sprintf(
-				'LEFT JOIN %s ON (%s = t.`id`) AND (%s = %s) ',
-				"$voteAggregateTable {$entity}Aggregate",
-				"`{$entity}Aggregate`.`target_id`",
-				"`{$entity}Aggregate`.`entity`",
-				$entityEncoded[$entity]
-			);
-			$_join2 .= sprintf(
-				'LEFT JOIN %s ON (%s = %s) AND (%s = t.`id`) ',
-				"$voteTable {$entity}",
-				"`{$entity}`.`entity`",
-				$entityEncoded[$entity],
-				"`{$entity}`.`target_id`"
-			);
+            $_join1 .= sprintf(
+                'LEFT JOIN %s ON (%s = t.`id`) AND (%s = %s) ',
+                "$voteAggregateTable {$entity}Aggregate",
+                "`{$entity}Aggregate`.`target_id`",
+                "`{$entity}Aggregate`.`entity`",
+                $entityEncoded[$entity]
+            );
+            $_join2 .= sprintf(
+                'LEFT JOIN %s ON (%s = %s) AND (%s = t.`id`) ',
+                "$voteTable {$entity}",
+                "`{$entity}`.`entity`",
+                $entityEncoded[$entity],
+                "`{$entity}`.`target_id`"
+            );
 
-			if (Yii::app()->getUser()->isGuest) {
-				$_join2and = sprintf(
-					'AND %s AND %s',
-					"{$entity}.user_ip = :user_ip",
-					"{$entity}.user_id = :user_id"
-				);
-				$_join2param = array(
-					':user_ip' => Yii::app()->getRequest()->userHostAddress,
-					':user_id' => null
-				);
-			} else {
-				$_join2and = sprintf(
-				'AND %s',
-				"{$entity}.user_id = :user_id");
-				$_join2param = array(':user_id' => Yii::app()->getUser()->getId());
-			}
+            if (Yii::app()->getUser()->isGuest) {
+                $_join2and = sprintf(
+                    'AND %s AND %s',
+                    "{$entity}.user_ip = :user_ip",
+                    "{$entity}.user_id = :user_id"
+                );
+                $_join2param = array(
+                    ':user_ip' => Yii::app()->getRequest()->userHostAddress,
+                    ':user_id' => null
+                );
+            } else {
+                $_join2and = sprintf(
+                'AND %s',
+                "{$entity}.user_id = :user_id");
+                $_join2param = array(':user_id' => Yii::app()->getUser()->getId());
+            }
         }
+        
+        if(!($result = $this->cache->get($this->getCacheKey()))){
 
-		$builder = $this->getOwner()->getCommandBuilder();
+            $builder = $owner->getCommandBuilder();
 
-		$voteAttrsCriteria = new CDbCriteria();
-		$voteAttrsCriteria->select = ltrim($_select1 . $_select2, ",");
-		$voteAttrsCriteria->condition = sprintf(
-			'`status`=1 AND `slug` = "%s"',
-			$this->getOwner()->slug
-		);
+            $voteAttrsCriteria = new CDbCriteria();
+            $voteAttrsCriteria->select = ltrim($_select1 . $_select2, ",");
+            $voteAttrsCriteria->condition = sprintf(
+                '`status`=1 AND `slug` = "%s"',
+                $this->getOwner()->slug
+            );
 
-        $voteAttrsCriteria->join = $_join1 . $_join2 . $_join2and;
-		$voteAttrsCriteria->params = $_join2param;
+            $voteAttrsCriteria->join = $_join1 . $_join2 . $_join2and;
+            $voteAttrsCriteria->params = $_join2param;
 
-		$result = $builder->createFindCommand($this->tableName, $voteAttrsCriteria)->queryRow();
+            $result = $builder->createFindCommand($owner->tableName(), $voteAttrsCriteria)->queryRow();
+            
+            $this->cache->set($this->getCacheKey(), $result, $this->cacheExpire);
+        }
+        
+        $this->voteAttributes = $result;
 
         return $result;
     }
-	
-	protected function cached($model=null)
-    {
-        if ($model === null)
-            $model = $this->getOwner();
+    
+    /**
+	 * Returns key for caching specific model's voteAttributes.
+	 * @return string
+	 */
+	private function getCacheKey() {
+		return $this->getCacheKeyBase().$this->getOwner()->primaryKey;
+	}
+    
+	/**
+	 * Returns cache key base.
+	 * @return string
+	 */
+	private function getCacheKeyBase() {
+        $owner = $this->getOwner();
+		return 'VoteAttributes'.
+			mb_strtolower(get_class($owner)).
+			$this->voteTable.
+			$this->voteAggregateTable;
+	}
 
-        $connection = $model->getDbConnection();
-        return $model->cache($connection->queryCachingDuration);
-    }
-
-    protected function getTableName()
-    {
-        if ($this->_tableName === null)
-            $this->_tableName = $this->getOwner()->tableName();
-        return $this->_tableName;
-    }
-		
 	/**
      * Retrieves the value of an array element or object property with the given key or property name.
      * If the key does not exist in the array or object, the default value will be returned instead.
      *
 	 * copy from yii2\helpers\BaseArrayHelper.php
-	 */
-	 /**
-	 * BaseArrayHelper provides concrete implementation for [[ArrayHelper]].
-	 *
-	 * Do not use BaseArrayHelper. Use [[ArrayHelper]] instead.
-	 *
-	 * @author Qiang Xue <qiang.xue@gmail.com>
-	 * @since 2.0
 	 */
 	private function getValue($array, $key, $default = null)
     {
